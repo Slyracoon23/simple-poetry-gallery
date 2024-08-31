@@ -5,6 +5,9 @@
 await import("./src/env.js");
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+    output: "export",  // <=== enables static exports
+    reactStrictMode: true,
+};
 
 export default config;
