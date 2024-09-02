@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Feather, Bookmark } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { poems, type Poem } from 'public/data/poems'
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 const parchmentBackground = `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d2b48c' fill-opacity='0.2'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`
 
@@ -14,6 +16,8 @@ export default function FramerMotionVintagePoetryGallery() {
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null)
   const [bookmarked, setBookmarked] = useState<number[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAddPoemDialogOpen, setIsAddPoemDialogOpen] = useState(false)
+  const [poemsState, setPoemsState] = useState(poems)
 
   useEffect(() => {
     const savedBookmarks = localStorage.getItem('bookmarkedPoems')
@@ -37,6 +41,14 @@ export default function FramerMotionVintagePoetryGallery() {
     setIsDialogOpen(true)
   }
 
+  const handleAddNewPoem = (newPoem: Omit<Poem, 'id'>) => {
+    const poemWithId: Poem = {
+      ...newPoem,
+      id: poemsState.length + 1, // Simple ID generation
+    }
+    setPoemsState((prevPoems) => [...prevPoems, poemWithId])
+  }
+
   return (
     <div className="min-h-screen p-8 bg-[#f4e6c5] text-[#704214]" style={{ backgroundImage: parchmentBackground }}>
       <motion.h1 
@@ -47,6 +59,14 @@ export default function FramerMotionVintagePoetryGallery() {
       >
         Vintage Poetry Scrolls
       </motion.h1>
+      <motion.div className="mb-8 flex justify-center">
+        <Button
+          onClick={() => setIsAddPoemDialogOpen(true)}
+          className="bg-[#704214] text-[#f8f0e3] hover:bg-[#8b572a]"
+        >
+          Add New Poem
+        </Button>
+      </motion.div>
       <motion.div 
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         initial="hidden"
@@ -59,7 +79,7 @@ export default function FramerMotionVintagePoetryGallery() {
           }
         }}
       >
-        {poems.map((poem) => (
+        {poemsState.map((poem) => (
           <PoemCard 
             key={poem.id} 
             poem={poem} 
@@ -74,6 +94,20 @@ export default function FramerMotionVintagePoetryGallery() {
         onOpenChange={setIsDialogOpen}
         poem={selectedPoem}
       />
+      <Dialog open={isAddPoemDialogOpen} onOpenChange={setIsAddPoemDialogOpen}>
+        <DialogContent className="max-w-md bg-[#f8f0e3] border-2 border-[#704214]">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-serif">Add New Poem</DialogTitle>
+          </DialogHeader>
+          <AddPoemForm
+            onSubmit={(newPoem) => {
+              handleAddNewPoem(newPoem)
+              setIsAddPoemDialogOpen(false)
+            }}
+            onCancel={() => setIsAddPoemDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -150,5 +184,49 @@ function PoemDialog({ isOpen, onOpenChange, poem }: PoemDialogProps) {
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  )
+}
+
+interface AddPoemFormProps {
+  onSubmit: (newPoem: Omit<Poem, 'id'>) => void;
+  onCancel: () => void;
+}
+
+function AddPoemForm({ onSubmit, onCancel }: AddPoemFormProps) {
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [content, setContent] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSubmit({ title, author, content })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        placeholder="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
+      <Input
+        placeholder="Author"
+        value={author}
+        onChange={(e) => setAuthor(e.target.value)}
+        required
+      />
+      <Textarea
+        placeholder="Poem content"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        required
+        className="h-40"
+      />
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="submit">Publish Poem</Button>
+      </div>
+    </form>
   )
 }
